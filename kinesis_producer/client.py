@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 def get_connection(aws_region):
     session = boto3.session.Session()
-    connection = session.client('kinesis', region_name=aws_region)
+    connection = session.client('kinesis', region_name=aws_region, config=botocore.client.Config(max_pool_connections=1000))
     return connection
 
 

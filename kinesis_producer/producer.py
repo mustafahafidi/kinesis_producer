@@ -30,7 +30,8 @@ class KinesisProducer(object):
         self._sender = Sender(queue=self._queue,
                               accumulator=accumulator,
                               client=client,
-                              partitioner=random_partitioner)
+                              partitioner=random_partitioner,
+                              delimiter=config['record_delimiter'])
         self._sender.daemon = True
         self._sender.start()
 

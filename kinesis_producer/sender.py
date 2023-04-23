@@ -9,7 +9,7 @@ log = logging.getLogger(__name__)
 class Sender(threading.Thread):
     """I/O thread accumulating records and flushing to client."""
 
-    def __init__(self, queue, accumulator, client, partitioner):
+    def __init__(self, queue, accumulator, client, partitioner, delimiter):
         super(Sender, self).__init__()
         self.queue = queue
         self._accumulator = accumulator
@@ -17,6 +17,7 @@ class Sender(threading.Thread):
         self._partitioner = partitioner
         self._running = True
         self._closed = threading.Event()
+        self._delimiter = delimiter
 
     def run(self):
         while self._running:
@@ -68,6 +69,8 @@ class Sender(threading.Thread):
         record_data = self._accumulator.flush()
         if record_data:
             log.debug('Flushing to client (length: %i)', len(record_data))
+            # delete any eventual trailing delimiter
+            record_data = record_data.rstrip(self._delimiter)
             record = (record_data, self._partitioner(record_data))
             self._client.put_record(record)
 
