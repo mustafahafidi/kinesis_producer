@@ -1,6 +1,7 @@
 import logging
 import threading
 
+import sys 
 from six.moves import queue
 
 log = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ class Sender(threading.Thread):
         self._partitioner = partitioner
         self._running = True
         self._closed = threading.Event()
+        self.records_to_flush = []
         self._delimiter = delimiter
 
     def run(self):
@@ -71,8 +73,13 @@ class Sender(threading.Thread):
             log.debug('Flushing to client (length: %i)', len(record_data))
             # delete any eventual trailing delimiter
             record_data = record_data.rstrip(self._delimiter)
-            record = (record_data, self._partitioner(record_data))
-            self._client.put_record(record)
+            record = {"Data":record_data, "PartitionKey": self._partitioner(record_data)}
+            self.records_to_flush.append(record)
+            if len(self.records_to_flush) == 150:
+                # print total size in bytes of records to flush list
+                # print("Total items to flush: %i" % len(self.records_to_flush))
+                self._client.put_records(self.records_to_flush)
+                self.records_to_flush = []
 
     def close(self):
         log.debug("Closing kinesis producer I/O thread")
